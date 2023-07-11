@@ -1,19 +1,24 @@
-import { messageApi } from '@/services/message-services';
-import { MessageType } from '@/types/message';
-import { uploadImage } from '@/utils/upload-image';
+import { Dropdown, MenuProps, Upload, UploadFile, UploadProps } from 'antd';
+import EmojiPicker, { EmojiStyle } from 'emoji-picker-react';
 import {
   FileImageOutlined,
   FileTextOutlined,
   LinkOutlined,
   SmileOutlined,
 } from '@ant-design/icons';
-import { useMutation } from '@tanstack/react-query';
-import { Dropdown, MenuProps, Upload, UploadFile, UploadProps } from 'antd';
-import { RcFile } from 'antd/es/upload';
-import EmojiPicker, { EmojiStyle } from 'emoji-picker-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-type Props = { roomId: string };
+import { MessageType } from '@/types/message';
+import { RcFile } from 'antd/es/upload';
+import { messageApi } from '@/services/message-services';
+import { uploadImage } from '@/utils/upload-image';
+import { useMutation } from '@tanstack/react-query';
+
+type Props = {
+  roomId: string;
+  flag: boolean;
+  setRoomId: React.Dispatch<React.SetStateAction<string>>;
+};
 
 const MessageFooter = (props: Props) => {
   const [inputChat, setInputChat] = useState('');
@@ -66,34 +71,18 @@ const MessageFooter = (props: Props) => {
 
   const emojiStyle: EmojiStyle = EmojiStyle.NATIVE;
 
-  //api
-
-  // const { data: messages } = useQuery({
-  //   queryKey: ['message', roomId],
-  //   queryFn: () => messageApi.getMessages(roomId!),
-  //   enabled: !!roomId,
-  //   onError(err) {
-  //     console.log(err);
-  //   },
-  // });
   const mutation = useMutation({
     mutationFn: messageApi.createMessage,
+    onSuccess: (message) => {
+      console.log('mess', message.room);
+      console.log(props.flag);
+      if (!props.flag && !!message) {
+        props.setRoomId(message.room || '');
+      }
+    },
   });
-  // useUserStore.getState().data!;
-
-  // const { isLoading, isError, data, error } = useQuery({
-  //   queryKey: ['todos', roomId],
-  //   queryFn: messageApi.getMessages(roomId),
-  //   enabled: !!roomId,
-  //   onError(err) {
-  //     console.log(err);
-  //   },
-  // });
-  //upload ảnh
-  // const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [imageList, setImageList] = useState<UploadFile[]>([]);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
-  // const [imageList, setImageList] = useState<string[]>([]);
 
   const onChange: UploadProps['onChange'] = ({ fileList: newFileList }) => {
     console.log('new', newFileList);
@@ -128,24 +117,6 @@ const MessageFooter = (props: Props) => {
     else if (selectType === MessageType.FILE && labelFile.current) labelFile.current.click();
   }, [selectType]);
 
-  //   const myInput = useRef<HTMLButtonElement>(null);
-  //   useEffect(() => {
-  //     if (myInput.current) {
-  //       myInput.current.click();
-  //     }
-  //   }, []);
-  //   return (
-  //     <div>
-  //       <button
-  //         ref={myInput}
-  //         onClick={() => {
-  //           console.log('object');
-  //         }}
-  //       >
-  //         hihi
-  //       </button>
-  //     </div>
-  //   );
   type fileType = {
     link: any;
     name: any;
@@ -186,6 +157,7 @@ const MessageFooter = (props: Props) => {
       console.log(fileList);
       listFile = await submitFile(fileList);
     }
+    console.log('check', props.roomId);
     const message = {
       content: inputElement?.current?.value,
       type: type,
@@ -193,96 +165,98 @@ const MessageFooter = (props: Props) => {
       images: type === MessageType.IMAGE ? listImage : [],
       files: type === MessageType.FILE ? listFile : [],
     };
-    mutation.mutate(message);
+    const mess = {
+      message,
+      isNotTemp: props.flag,
+    };
+    mutation.mutate(mess);
     setInputChat('');
     setFileList([]);
     setImageList([]);
     setSelectType(MessageType.TEXT);
   };
   return (
-    <div className="mb-5 mt-2 h-fit w-[730px] flex-shrink-0 rounded-lg bg-white">
-      <div className=" flex min-h-[56px] w-full items-center">
-        <div className="relative flex h-9 w-14 items-center justify-center" ref={emojiPickerRef}>
-          <div
-            onClick={() => {
-              inputElement?.current?.focus();
-              setDisplayEmoji((prev) => !prev);
-            }}
-          >
-            <SmileOutlined className="cursor:cursor-pointer text-[22px] text-gray-500" />
-          </div>
-          {displayEmoji && (
-            <div className="absolute bottom-14 left-0 drop-shadow-xl">
-              <EmojiPicker
-                onEmojiClick={(emoji: { emoji: string }) => pickerEmoji(emoji.emoji)}
-                emojiStyle={emojiStyle}
-                autoFocusSearch={false}
-              />
+    <div className="px-4 w-full max-w-[730px]">
+      <div className="custom mb-5 mt-2 h-fit  flex-shrink-0  rounded-lg bg-white">
+        <div className=" flex min-h-[56px] w-full items-center">
+          <div className="relative flex h-9 w-14 items-center justify-center" ref={emojiPickerRef}>
+            <div
+              onMouseEnter={() => {
+                inputElement?.current?.focus();
+                setDisplayEmoji(true);
+              }}
+              onMouseLeave={() => {
+                inputElement?.current?.focus();
+                setDisplayEmoji(false);
+              }}
+            >
+              <SmileOutlined className="cursor:cursor-pointer text-[22px] text-gray-500" />
             </div>
-          )}
-        </div>
-        <div className="block h-fit flex-1 ">
-          {selectType === MessageType.IMAGE && (
-            <Upload
-              listType="picture-card"
-              accept="image/png, image/jpeg"
-              fileList={imageList}
-              onChange={onChange}
-              onPreview={onPreview}
+            {displayEmoji && (
+              <div className="absolute bottom-14 left-0 z-10 drop-shadow-xl">
+                <EmojiPicker
+                  onEmojiClick={(emoji: { emoji: string }) => pickerEmoji(emoji.emoji)}
+                  emojiStyle={emojiStyle}
+                  autoFocusSearch={false}
+                />
+              </div>
+            )}
+          </div>
+          <div className="block h-fit flex-1 ">
+            {selectType === MessageType.IMAGE && (
+              <Upload
+                listType="picture-card"
+                accept="image/png, image/jpeg"
+                fileList={imageList}
+                onChange={onChange}
+                onPreview={onPreview}
+                beforeUpload={() => false}
+              >
+                <button type="button" ref={labelImage}>
+                  + Upload
+                </button>
+              </Upload>
+            )}
+            {selectType === MessageType.FILE && (
+              <Upload
+                action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+                listType="picture-card"
+                className="flex gap-12 "
+                accept=".pdf, .txt, .docx, .pptx"
+                onChange={onChangeFile}
+                beforeUpload={() => false}
+              >
+                <button type="button" ref={labelFile}>
+                  + Upload
+                </button>
+              </Upload>
+            )}
+
+            <input
+              placeholder="Message"
+              className="block h-12 w-full text-black focus:outline-none"
+              value={inputChat}
+              onChange={(e) => {
+                setInputChat(e.target.value);
+              }}
+              ref={inputElement}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleEnter();
+                }
+              }}
+            />
+          </div>
+
+          <div className="relative flex h-9 w-14 items-center justify-center">
+            <Dropdown
+              overlayClassName="w-40"
+              menu={{ items: sendFileItem, onClick }}
+              placement="topRight"
             >
-              <button type="button" ref={labelImage}>
-                + Upload
-              </button>
-            </Upload>
-          )}
-          {selectType === MessageType.FILE && (
-            <Upload
-              action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
-              listType="picture-card"
-              className="flex gap-12 "
-              accept=".pdf, .txt, .docx"
-              onChange={onChangeFile}
-            >
-              <button type="button" ref={labelFile}>
-                + Upload
-              </button>
-            </Upload>
-          )}
-
-          <input
-            placeholder="Message"
-            className="block h-12 w-full text-black focus:outline-none"
-            value={inputChat}
-            onChange={(e) => {
-              setInputChat(e.target.value);
-            }}
-            ref={inputElement}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleEnter();
-              }
-            }}
-          />
-        </div>
-
-        <div className="relative flex h-9 w-14 items-center justify-center">
-          <Dropdown
-            overlayClassName="w-40"
-            menu={{ items: sendFileItem, onClick }}
-            placement="topRight"
-          >
-            <LinkOutlined className="text-[22px] text-gray-500 hover:cursor-pointer hover:text-cyan-600" />
-          </Dropdown>
-
-          {/* <input
-            onChange={(e) => {
-              console.log('object', e.target.value);
-            }}
-            id="file-input"
-            type="file"
-            hidden
-            multiple
-          /> */}
+              <LinkOutlined className="text-[22px] text-gray-500 hover:cursor-pointer hover:text-cyan-600" />
+            </Dropdown>
+          </div>
         </div>
       </div>
     </div>
