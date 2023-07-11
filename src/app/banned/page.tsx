@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-const HOME_LINK = process.env.HOME_PATH;
+const HOME_LINK =  `${process.env.HOME_PATH}`;
 
 export default function BannedPage() {
   return (
