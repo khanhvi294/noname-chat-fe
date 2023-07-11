@@ -3,11 +3,11 @@ import Link from 'next/link';
 import { checkIsLogin } from '@/utils/auth';
 import { redirect } from 'next/navigation';
 
-
+const LOGIN_LINK = process.env.SERVER_API_URL + '/api/auth/google';
 
 export default function Home() {
   const isLogged = checkIsLogin();
-  const LOGIN_LINK = process.env.SERVER_API_URL;
+
   if (isLogged) redirect('/chat');
   return (
     <main className="flex min-h-screen flex-col items-center justify-between">
