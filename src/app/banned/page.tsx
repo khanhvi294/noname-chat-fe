@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-const HOME_LINK = 'http://localhost:3000';
+// const HOME_LINK = 'http://localhost:3000';
 
 export default function BannedPage() {
   return (
@@ -16,11 +16,11 @@ export default function BannedPage() {
               Banned
             </span>
           </h1>
-          <Link href={HOME_LINK}>
+{/*           <Link href={HOME_LINK}>
             <button className="mb-4 rounded-full bg-gradient-to-l from-blue-600 to-purple-600 px-4 py-4 font-bold text-white shadow hover:bg-blue-500">
               Back to Home
             </button>
-          </Link>
+          </Link> */}
         </div>
       </div>
     </main>
